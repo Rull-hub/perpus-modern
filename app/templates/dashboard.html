@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="catalog-header">
+    <h1>Dashboard: {{ current_user.username }}</h1>
+</section>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 30px;">
+    <!-- BUKU YANG SEDANG DIPINJAM -->
+    <div class="auth-card" style="max-width: 100%;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: var(--accent);">Buku Sedang Dipinjam</h2>
+        {% if active_loans %}
+            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
+                        <th style="padding: 10px;">Judul</th>
+                        <th style="padding: 10px;">Jatuh Tempo</th>
+                        <th style="padding: 10px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in active_loans %}
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 10px;">{{ loan.book.title }}</td>
+                            <!-- Warna merah sudah dihapus agar tidak error -->
+                            <td style="padding: 10px;">
+                                {{ loan.due_date.strftime('%d-%m-%Y') }}
+                            </td>
+                            <td style="padding: 10px;">
+                                <form action="{{ url_for('main.return_book', loan_id=loan.id) }}" method="POST">
+                                    <button type="submit" class="btn-logout" style="padding: 5px 10px; font-size: 0.8rem;">Kembalikan</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="color: var(--text-muted);">Anda tidak sedang meminjam buku apa pun.</p>
+        {% endif %}
+    </div>
+
+    <!-- RIWAYAT PEMINJAMAN -->
+    <div class="auth-card" style="max-width: 100%;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: var(--text-muted);">Riwayat Peminjaman</h2>
+        {% if history_loans %}
+            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
+                        <th style="padding: 10px;">Judul</th>
+                        <th style="padding: 10px;">Tanggal Kembali</th>
+                        <th style="padding: 10px;">Denda</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in history_loans %}
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 10px;">{{ loan.book.title }}</td>
+                            <td style="padding: 10px;">{{ loan.return_date.strftime('%d-%m-%Y') }}</td>
+                            <td style="padding: 10px; color: {% if loan.fine_amount > 0 %}var(--danger){% else %}var(--success){% endif %};">
+                                Rp {{ loan.fine_amount }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="color: var(--text-muted);">Belum ada riwayat peminjaman.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

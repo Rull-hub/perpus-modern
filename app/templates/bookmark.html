@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Wishlist Saya — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="catalog-header" style="margin-bottom: 30px;">
+    <h1>Wishlist / Bookmark Saya</h1>
+    <p class="auth-subtitle">Buku-buku yang ingin Anda baca nanti.</p>
+</section>
+
+<section class="main-collection">
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+        {% for bookmark in bookmarks %}
+        <div class="col">
+            <div class="book-card h-100">
+                <div class="book-cover">
+                    {% if bookmark.book.cover_image %}
+                        <img src="{{ bookmark.book.cover_image }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover">
+                    {% else %}
+                        <div class="cover-placeholder">📖</div>
+                    {% endif %}
+                    
+                    <div class="badge-stock {% if bookmark.book.stock > 0 %}available{% else %}empty{% endif %}">
+                        {% if bookmark.book.stock > 0 %}Stok: {{ bookmark.book.stock }}{% else %}Habis{% endif %}
+                    </div>
+                </div>
+                
+                <div class="book-info">
+                    <span class="book-category">{{ bookmark.book.category or 'Umum' }}</span>
+                    <h3 class="book-title">{{ bookmark.book.title }}</h3>
+                    <p class="book-author">{{ bookmark.book.author }}</p>
+                    
+                    <div class="action-buttons">
+                        <form action="{{ url_for('main.remove_bookmark', bookmark_id=bookmark.id) }}" method="POST" style="width: 100%;">
+                            <button type="submit" class="btn-logout" style="width: 100%; padding: 8px; font-size: 0.85rem;">Hapus</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <p class="empty-state">Wishlist Anda masih kosong. Ayo cari buku di Katalog! 📚</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

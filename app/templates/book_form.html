@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Buku — Admin{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+    <div class="auth-card" style="max-width: 600px;">
+        <h1>{{ action }} Buku</h1>
+        <p class="auth-subtitle">Isi data buku di bawah ini.</p>
+
+        <form method="POST">
+            <label>Judul Buku</label>
+            <input type="text" name="title" value="{{ book.title if book else '' }}" required>
+
+            <label>Penulis</label>
+            <input type="text" name="author" value="{{ book.author if book else '' }}" required>
+
+            <label>Kategori</label>
+            <select name="category" required style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; outline: none;">
+                <option value="" disabled {% if not book %}selected{% endif %}>-- Pilih Kategori --</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if book and book.category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Stok</label>
+            <input type="number" name="stock" value="{{ book.stock if book else 1 }}" required min="0">
+
+            <label>URL Gambar Sampul (Opsional)</label>
+            <input type="url" name="cover_image" value="{{ book.cover_image if book else '' }}">
+
+            <label>Sinopsis</label>
+            <textarea name="synopsis" rows="4" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; outline: none; font-family: inherit;">{{ book.synopsis if book else '' }}</textarea>
+
+            <button type="submit" class="btn-submit">Simpan Data</button>
+            <a href="{{ url_for('main.admin_dashboard') }}" style="display: block; text-align: center; margin-top: 15px; color: var(--text-muted); text-decoration: none;">Batal</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

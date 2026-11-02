@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Profil Saya — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="catalog-header">
+    <h1>Profil Pengguna</h1>
+    <p class="auth-subtitle">Informasi akun dan ringkasan aktivitas Anda.</p>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+    <!-- KARTU INFORMASI AKUN -->
+    <div class="auth-card" style="max-width: 100%;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 20px; color: var(--accent);">Informasi Akun</h2>
+        
+        <div style="margin-bottom: 15px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Username</p>
+            <p style="font-size: 1.1rem; font-weight: bold;">{{ current_user.username }}</p>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Email</p>
+            <p style="font-size: 1.1rem; font-weight: bold;">{{ current_user.email }}</p>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Role</p>
+            <p style="font-size: 1.1rem; font-weight: bold; text-transform: capitalize;">{{ current_user.role }}</p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Tanggal Mendaftar</p>
+            <p style="font-size: 1.1rem; font-weight: bold;">{{ current_user.created_at.strftime('%d %B %Y') }}</p>
+        </div>
+
+        <a href="{{ url_for('main.change_password') }}" class="btn-submit" style="display: block; text-align: center; text-decoration: none; padding: 12px;">Ubah Password</a>
+    </div>
+
+    <!-- KARTU RINGKASAN AKTIVITAS -->
+    <div class="auth-card" style="max-width: 100%;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 20px; color: var(--text-muted);">Ringkasan Aktivitas</h2>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border);">
+            <span>Buku Sedang Dipinjam</span>
+            <span style="font-size: 1.5rem; font-weight: bold; color: #f1c40f;">{{ active_loans }}</span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border);">
+            <span>Riwayat Peminjaman</span>
+            <span style="font-size: 1.5rem; font-weight: bold; color: var(--success);">{{ history_loans }}</span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0;">
+            <span>Buku di Wishlist</span>
+            <span style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">{{ total_bookmarks }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

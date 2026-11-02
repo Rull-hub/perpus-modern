@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Katalog — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="catalog-header" style="margin-bottom: 20px;">
+    <h1>Katalog & Pencarian Global</h1>
+    <form class="filter-bar" method="get" action="{{ url_for('main.catalog') }}" style="margin-top: 15px; margin-bottom: 20px;">
+        <input type="text" name="q" placeholder="Cari buku di seluruh dunia (misal: Harry Potter)..." value="{{ q }}" style="padding: 12px; width: 100%; max-width: 500px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-elevated); color: white;">
+        <button type="submit" class="btn-login" style="border: none; cursor: pointer; padding: 12px 25px;">Cari Buku</button>
+    </form>
+</section>
+
+{% if not q %}
+<div class="d-flex flex-wrap gap-2 mb-4" style="overflow-x: auto; padding-bottom: 10px;">
+    <a href="{{ url_for('main.catalog') }}" class="btn-login" style="white-space: nowrap; background: {% if not category %}var(--accent){% else %}var(--bg-elevated){% endif %}; border: 1px solid var(--border); text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; color: {% if not category %}#fff !important{% else %}var(--text){% endif %};">Semua</a>
+    {% for cat in categories %}
+        <a href="{{ url_for('main.catalog', category=cat) }}" class="btn-login" style="white-space: nowrap; background: {% if category == cat %}var(--accent){% else %}var(--bg-elevated){% endif %}; border: 1px solid var(--border); text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; color: {% if category == cat %}#fff !important{% else %}var(--text){% endif %};">{{ cat }}</a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<section class="main-collection">
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+        {% for book in books %}
+        <div class="col">
+            {% if book.id %}
+            <a href="{{ url_for('main.book_detail', book_id=book.id) }}" class="book-card h-100 text-decoration-none" style="color: inherit;">
+            {% else %}
+            <div class="book-card h-100">
+            {% endif %}
+            
+                <div class="book-cover">
+                    {% if book.cover_image and book.cover_image.startswith('http') %}
+                        <!-- Jika gambar dari internet (hasil API) -->
+                        <img src="{{ book.cover_image }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover" referrerpolicy="no-referrer">
+                    {% else %}
+                        <!-- JIKA GAMBAR KOSONG (LOKAL), BIKIN SAMPUL CSS OTOMATIS -->
+                        <div class="generated-cover" data-category="{{ book.category }}">
+                            <span class="genre-tag">{{ book.category }}</span>
+                            <h4 class="cover-title">{{ book.title }}</h4>
+                            <p class="cover-author">{{ book.author }}</p>
+                            <div class="cover-icon">📚</div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if book.id %}
+                        <div class="badge-stock {% if book.stock > 0 %}available{% else %}empty{% endif %}">
+                            {% if book.stock > 0 %}Stok: {{ book.stock }}{% else %}Habis{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="book-info">
+                    <span class="book-category">{{ book.category or 'Umum' }}</span>
+                    <h3 class="book-title">{{ book.title }}</h3>
+                    <p class="book-author">{{ book.author }}</p>
+                    
+                    <div class="action-buttons">
+                        {% if book.id %}
+                            {% if current_user.is_authenticated and book.stock > 0 %}
+                                <form action="{{ url_for('main.borrow', book_id=book.id) }}" method="POST" class="flex-grow-1">
+                                    <button type="submit" class="btn-pinjam">Pinjam</button>
+                                </form>
+                            {% elif book.stock <= 0 %}
+                                <button class="btn-pinjam disabled" disabled>Habis</button>
+                            {% elif not current_user.is_authenticated %}
+                                <span class="btn-pinjam">Pinjam</span>
+                            {% endif %}
+                            {% if current_user.is_authenticated %}
+                                <form action="{{ url_for('main.add_bookmark', book_id=book.id) }}" method="POST">
+                                    <button type="submit" class="btn-bookmark" title="Simpan ke Wishlist">🤍</button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            {% if current_user.is_authenticated %}
+                                <form action="{{ url_for('main.save_external_book') }}" method="POST" style="width: 100%;">
+                                    <input type="hidden" name="title" value="{{ book.title }}">
+                                    <input type="hidden" name="author" value="{{ book.author }}">
+                                    <input type="hidden" name="category" value="{{ book.category }}">
+                                    <input type="hidden" name="synopsis" value="{{ book.synopsis }}">
+                                    <input type="hidden" name="cover_image" value="{{ book.cover_image }}">
+                                    <button type="submit" class="btn-pinjam" style="background: var(--success); color: #000;">Simpan Buku</button>
+                                </form>
+                            {% else %}
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Login untuk menyimpan</p>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                
+            {% if book.id %}
+            </a>
+            {% else %}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <p class="empty-state">
+                {% if q %}Buku dengan kata kunci "{{ q }}" tidak ditemukan. 🔍{% elif category %}Belum ada buku di kategori ini. 📭{% else %}Belum ada buku. Silakan cari di kolom atas! 📭{% endif %}
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

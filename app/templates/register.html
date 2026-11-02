@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Daftar — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+    <div class="auth-card">
+        <h1>Daftar Akun Baru</h1>
+        <p class="auth-subtitle">Bergabunglah untuk mulai meminjam buku.</p>
+
+        <form method="post" action="{{ url_for('main.register') }}">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus>
+
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit" class="btn-submit">Daftar Sekarang</button>
+        </form>
+
+        <p class="auth-hint">Sudah punya akun? <a href="{{ url_for('main.login') }}" style="color: var(--accent);">Masuk di sini</a></p>
+    </div>
+</section>
+{% endblock %}

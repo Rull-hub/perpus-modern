@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Beranda — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="featured-section">
+    <div class="section-header">
+        <h2>🔥 Trending Hari Ini</h2>
+    </div>
+    
+    <div class="featured-scroll">
+        {% for book in books[:8] %}
+        <a href="{{ url_for('main.book_detail', book_id=book.id) }}" class="featured-card text-decoration-none">
+            <div class="featured-cover">
+                {% if book.cover_image %}
+                    <img src="{{ book.cover_image }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover">
+                {% else %}
+                    <div class="cover-placeholder">📖</div>
+                {% endif %}
+                
+                <div class="featured-overlay">
+                    <span class="badge-genre">{{ book.category or 'Umum' }}</span>
+                    <h3 class="featured-title">{{ book.title }}</h3>
+                    <p class="featured-author">{{ book.author }}</p>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="main-collection">
+    <div class="section-header">
+        <h2>📚 Koleksi Terbaru</h2>
+        <a href="{{ url_for('main.catalog') }}" class="view-all">Lihat Semua →</a>
+    </div>
+
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+        {% for book in books %}
+        <div class="col">
+            <a href="{{ url_for('main.book_detail', book_id=book.id) }}" class="book-card h-100 text-decoration-none" style="color: inherit;">
+                <div class="book-cover">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover">
+                    {% else %}
+                        <div class="cover-placeholder">📖</div>
+                    {% endif %}
+                    
+                    <div class="badge-stock {% if book.stock > 0 %}available{% else %}empty{% endif %}">
+                        {% if book.stock > 0 %}Stok: {{ book.stock }}{% else %}Habis{% endif %}
+                    </div>
+                </div>
+                
+                <div class="book-info">
+                    <span class="book-category">{{ book.category or 'Umum' }}</span>
+                    <h3 class="book-title">{{ book.title }}</h3>
+                    <p class="book-author">{{ book.author }}</p>
+                    
+                    <div class="action-buttons">
+                        {% if current_user.is_authenticated and book.stock > 0 %}
+                            <form action="{{ url_for('main.borrow', book_id=book.id) }}" method="POST" class="flex-grow-1">
+                                <button type="submit" class="btn-pinjam">Pinjam</button>
+                            </form>
+                        {% elif book.stock <= 0 %}
+                            <button class="btn-pinjam disabled" disabled>Habis</button>
+                        {% elif not current_user.is_authenticated %}
+                            <span class="btn-pinjam">Pinjam</span>
+                        {% endif %}
+
+                        {% if current_user.is_authenticated %}
+                            <form action="{{ url_for('main.add_bookmark', book_id=book.id) }}" method="POST">
+                                <button type="submit" class="btn-bookmark" title="Simpan ke Wishlist">🤍</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <p class="empty-state">Belum ada buku di perpustakaan. 📭</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Masuk — Perpus Modern{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+    <div class="auth-card">
+        <h1>Masuk Akun</h1>
+        <p class="auth-subtitle">Silakan masuk untuk mengakses fitur perpustakaan.</p>
+
+        <form method="post" action="{{ url_for('main.login') }}">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autofocus>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit" class="btn-submit">Masuk</button>
+        </form>
+
+        <p class="auth-hint">Belum punya akun? <a href="{{ url_for('main.register') }}" style="color: var(--accent);">Daftar di sini</a></p>
+    </div>
+</section>
+{% endblock %}

@@ -45,6 +45,12 @@
                         <div class="cover-placeholder">📖</div>
                     {% endif %}
                     
+                    <!-- BADGE KATEGORI (KIRI ATAS) -->
+                    {% if book.category %}
+                        <div class="badge-category-top">{{ book.category.split(' ')[0] }}</div>
+                    {% endif %}
+
+                    <!-- BADGE STOK (KANAN ATAS) -->
                     <div class="badge-stock {% if book.stock > 0 %}available{% else %}empty{% endif %}">
                         {% if book.stock > 0 %}Stok: {{ book.stock }}{% else %}Habis{% endif %}
                     </div>
@@ -54,6 +60,9 @@
                     <span class="book-category">{{ book.category or 'Umum' }}</span>
                     <h3 class="book-title">{{ book.title }}</h3>
                     <p class="book-author">{{ book.author }}</p>
+                    
+                    <!-- RATING BINTANG -->
+                    <div class="rating">★ 4.8 <span>(120 ulasan)</span></div>
                     
                     <div class="action-buttons">
                         {% if current_user.is_authenticated and book.stock > 0 %}

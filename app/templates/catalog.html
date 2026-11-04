@@ -5,8 +5,8 @@
 <section class="catalog-header" style="margin-bottom: 20px;">
     <h1>Katalog & Pencarian Global</h1>
     <form class="filter-bar" method="get" action="{{ url_for('main.catalog') }}" style="margin-top: 15px; margin-bottom: 20px;">
-        <input type="text" name="q" placeholder="Cari buku di seluruh dunia (misal: Harry Potter)..." value="{{ q }}" style="padding: 12px; width: 100%; max-width: 500px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-elevated); color: white;">
-        <button type="submit" class="btn-login" style="border: none; cursor: pointer; padding: 12px 25px;">Cari Buku</button>
+        <input type="text" name="q" placeholder="Cari buku di seluruh dunia (misal: Harry Potter)..." value="{{ q }}" style="padding: 12px; width: 100%; max-width: 500px; border-radius: 50px; border: 1px solid var(--border); background: var(--bg-elevated); color: white; padding-left: 20px;">
+        <button type="submit" class="btn-login" style="border: none; cursor: pointer; padding: 12px 25px; border-radius: 50px;">Cari Buku</button>
     </form>
 </section>
 
@@ -30,20 +30,23 @@
             {% endif %}
             
                 <div class="book-cover">
-                    {% if book.cover_image and book.cover_image.startswith('http') %}
-                        <!-- Jika gambar dari internet (hasil API) -->
-                        <img src="{{ book.cover_image }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover" referrerpolicy="no-referrer">
+                    {% if book.cover_image %}
+                        {% if book.cover_image.startswith('http') %}
+                            <img src="{{ book.cover_image }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover" referrerpolicy="no-referrer">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='covers/' + book.cover_image) }}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'cover-placeholder\'>📖</div>';" alt="Cover">
+                        {% endif %}
                     {% else %}
-                        <!-- JIKA GAMBAR KOSONG (LOKAL), BIKIN SAMPUL CSS OTOMATIS -->
-                        <div class="generated-cover" data-category="{{ book.category }}">
-                            <span class="genre-tag">{{ book.category }}</span>
-                            <h4 class="cover-title">{{ book.title }}</h4>
-                            <p class="cover-author">{{ book.author }}</p>
-                            <div class="cover-icon">📚</div>
-                        </div>
+                        <div class="cover-placeholder">📖</div>
                     {% endif %}
                     
                     {% if book.id %}
+                        <!-- BADGE KATEGORI (KIRI ATAS) -->
+                        {% if book.category %}
+                            <div class="badge-category-top">{{ book.category.split(' ')[0] }}</div>
+                        {% endif %}
+
+                        <!-- BADGE STOK (KANAN ATAS) -->
                         <div class="badge-stock {% if book.stock > 0 %}available{% else %}empty{% endif %}">
                             {% if book.stock > 0 %}Stok: {{ book.stock }}{% else %}Habis{% endif %}
                         </div>
@@ -54,6 +57,9 @@
                     <span class="book-category">{{ book.category or 'Umum' }}</span>
                     <h3 class="book-title">{{ book.title }}</h3>
                     <p class="book-author">{{ book.author }}</p>
+                    
+                    <!-- RATING BINTANG -->
+                    <div class="rating">★ 4.8 <span>(120 ulasan)</span></div>
                     
                     <div class="action-buttons">
                         {% if book.id %}
@@ -66,6 +72,7 @@
                             {% elif not current_user.is_authenticated %}
                                 <span class="btn-pinjam">Pinjam</span>
                             {% endif %}
+
                             {% if current_user.is_authenticated %}
                                 <form action="{{ url_for('main.add_bookmark', book_id=book.id) }}" method="POST">
                                     <button type="submit" class="btn-bookmark" title="Simpan ke Wishlist">🤍</button>

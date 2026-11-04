@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 from functools import wraps
+from sqlalchemy import or_, func
 
 from app import db
 from app.models import User, Book, Loan, Bookmark
@@ -19,11 +20,23 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- HALAMAN UTAMA ---
+# --- HALAMAN UTAMA (DENGAN WIDGET TERPOPULER) ---
 @main.route("/")
 def index():
     books = Book.query.order_by(Book.created_at.desc()).limit(12).all()
-    return render_template("index.html", books=books)
+    
+    # QUERY BUKU TERPOPULER (Berdasarkan jumlah peminjaman)
+    top_books = db.session.query(
+        Book, func.count(Loan.id).label('borrow_count')
+    ).join(Loan).group_by(Book.id).order_by(func.count(Loan.id).desc()).limit(5).all()
+    
+    # Jika belum ada transaksi sama sekali, ambil 5 buku terbaru sebagai fallback
+    if not top_books:
+        top_books_raw = Book.query.order_by(Book.created_at.desc()).limit(5).all()
+        # Kita bikin format tuple palsu (Book, 0) biar template tetap jalan
+        top_books = [(b, 0) for b in top_books_raw]
+
+    return render_template("index.html", books=books, top_books=top_books)
 
 # --- HALAMAN DETAIL BUKU ---
 @main.route("/book/<int:book_id>")
@@ -34,29 +47,25 @@ def book_detail(book_id):
         is_bookmarked = Bookmark.query.filter_by(user_id=current_user.id, book_id=book.id).first() is not None
     return render_template("book_detail.html", book=book, is_bookmarked=is_bookmarked)
 
-# --- KATALOG (DENGAN 10 KATEGORI RESMI) ---
+# --- KATALOG & PENCARIAN ---
 @main.route("/catalog")
 def catalog():
     q = request.args.get("q", "").strip()
     category = request.args.get("category", "").strip()
     books = []
     
-    # Daftar 10 Kategori Resmi
     DAFTAR_KATEGORI = [
-        "Agama & Spiritual",
-        "Sains & Matematika",
-        "Teknologi & Komputer",
-        "Fiksi & Novel",
-        "Sejarah & Budaya",
-        "Self-Improvement & Psikologi",
-        "Ekonomi & Bisnis",
-        "Seni & Hiburan",
-        "Pendidikan & Referensi",
-        "Kesehatan & Gaya Hidup"
+        "Agama & Spiritual", "Sains & Matematika", "Teknologi & Komputer", 
+        "Fiksi & Novel", "Sejarah & Budaya", "Self-Improvement & Psikologi", 
+        "Ekonomi & Bisnis", "Seni & Hiburan", "Pendidikan & Referensi", "Kesehatan & Gaya Hidup"
     ]
     
     if q:
-        books = search_books_api(q)
+        local_books = Book.query.filter(
+            or_(Book.title.ilike(f"%{q}%"), Book.author.ilike(f"%{q}%"))
+        ).all()
+        api_books = search_books_api(q)
+        books = local_books + api_books
     else:
         query = Book.query
         if category:
@@ -117,14 +126,15 @@ def remove_bookmark(bookmark_id):
         flash("Buku dihapus dari Bookmark.", "info")
     return redirect(url_for("main.my_bookmarks"))
 
-# --- PROFIL & PENGATURAN AKUN ---
+# --- PROFIL & RIWAYAT ---
 @main.route("/profile")
 @login_required
 def profile():
     active_loans = Loan.query.filter_by(user_id=current_user.id, status="borrowed").count()
     history_loans = Loan.query.filter_by(user_id=current_user.id, status="returned").count()
     total_bookmarks = Bookmark.query.filter_by(user_id=current_user.id).count()
-    return render_template("profile.html", active_loans=active_loans, history_loans=history_loans, total_bookmarks=total_bookmarks)
+    all_user_loans = Loan.query.filter_by(user_id=current_user.id).order_by(Loan.borrow_date.desc()).all()
+    return render_template("profile.html", active_loans=active_loans, history_loans=history_loans, total_bookmarks=total_bookmarks, user_loans=all_user_loans)
 
 @main.route("/change-password", methods=["GET", "POST"])
 @login_required
@@ -202,6 +212,7 @@ def borrow(book_id):
     if existing_loan:
         flash("Anda masih meminjam buku ini.", "danger")
         return redirect(url_for("main.book_detail", book_id=book.id))
+    
     due_date = datetime.utcnow() + timedelta(days=7)
     new_loan = Loan(user_id=current_user.id, book_id=book.id, due_date=due_date)
     book.stock -= 1
@@ -252,7 +263,17 @@ def admin_dashboard():
     total_stock = db.session.query(db.func.sum(Book.stock)).scalar() or 0
     members = User.query.filter_by(role="member").all()
     all_loans = Loan.query.order_by(Loan.borrow_date.desc()).all()
-    return render_template("admin.html", total_books=total_books, total_stock=total_stock, members=members, all_loans=all_loans, books=Book.query.all())
+    active_loans_count = Loan.query.filter_by(status="borrowed").count()
+    total_transactions = Loan.query.count()
+
+    return render_template("admin.html", 
+                           total_books=total_books, 
+                           total_stock=total_stock, 
+                           members=members, 
+                           all_loans=all_loans, 
+                           books=Book.query.all(),
+                           active_loans_count=active_loans_count,
+                           total_transactions=total_transactions)
 
 @main.route("/admin/book/add", methods=["GET", "POST"])
 @login_required

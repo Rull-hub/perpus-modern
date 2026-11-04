@@ -12,10 +12,11 @@
         <div class="navbar-inner">
             <a href="{{ url_for('main.index') }}" class="brand">📚 Perpus<span>Modern</span></a>
 
-            <form class="search-bar" action="{{ url_for('main.catalog') }}" method="get">
-                <input type="text" name="q" placeholder="Cari judul atau penulis..." value="{{ request.args.get('q', '') }}">
-                <button type="submit">🔍</button>
-            </form>
+            <!-- LIVE SEARCH BAR -->
+            <div class="search-bar position-relative" style="flex: 1; min-width: 200px; display: flex; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 50px; overflow: hidden;">
+                <input type="text" id="live-search-input" placeholder="Cari judul, penulis, atau kategori..." autocomplete="off" style="flex: 1; background: transparent; border: none; padding: 10px 20px; color: var(--text); outline: none;">
+                <div id="live-search-results" style="display: none; position: absolute; top: 110%; left: 0; width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; z-index: 1050; max-height: 400px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></div>
+            </div>
 
             <nav class="nav-links">
                 <a href="{{ url_for('main.index') }}">Beranda</a>
@@ -66,7 +67,6 @@
         const toggleBtn = document.getElementById('theme-toggle');
         const currentTheme = localStorage.getItem('theme') || 'dark';
 
-        // Set tema awal
         if (currentTheme === 'light') {
             document.documentElement.setAttribute('data-theme', 'light');
             toggleBtn.textContent = '☀️';
@@ -75,7 +75,6 @@
             toggleBtn.textContent = '🌙';
         }
 
-        // Tombol klik
         toggleBtn.addEventListener('click', () => {
             let theme = document.documentElement.getAttribute('data-theme');
             if (theme === 'light') {
@@ -86,6 +85,62 @@
                 document.documentElement.setAttribute('data-theme', 'light');
                 localStorage.setItem('theme', 'light');
                 toggleBtn.textContent = '☀️';
+            }
+        });
+    </script>
+
+    <!-- SCRIPT LIVE SEARCH -->
+    <script>
+        const searchInput = document.getElementById('live-search-input');
+        const searchResults = document.getElementById('live-search-results');
+
+        let debounceTimer;
+        
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(book => {
+                                const item = document.createElement('a');
+                                item.href = `/book/${book.id}`;
+                                item.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); transition: background 0.2s;';
+                                
+                                item.onmouseover = () => item.style.background = 'var(--bg-elevated)';
+                                item.onmouseout = () => item.style.background = 'transparent';
+
+                                let imgSrc = book.cover || 'https://via.placeholder.com/40x60?text=No+Cover';
+                                
+                                item.innerHTML = `
+                                    <img src="${imgSrc}" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px;">
+                                    <div>
+                                        <div style="font-weight: bold; font-size: 0.9rem;">${book.title}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">${book.author}</div>
+                                    </div>
+                                `;
+                                searchResults.appendChild(item);
+                            });
+                            searchResults.style.display = 'block';
+                        } else {
+                            searchResults.style.display = 'none';
+                        }
+                    });
+            }, 300);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
             }
         });
     </script>

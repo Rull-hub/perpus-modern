@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 from functools import wraps
@@ -30,13 +30,36 @@ def index():
         Book, func.count(Loan.id).label('borrow_count')
     ).join(Loan).group_by(Book.id).order_by(func.count(Loan.id).desc()).limit(5).all()
     
-    # Jika belum ada transaksi sama sekali, ambil 5 buku terbaru sebagai fallback
     if not top_books:
         top_books_raw = Book.query.order_by(Book.created_at.desc()).limit(5).all()
-        # Kita bikin format tuple palsu (Book, 0) biar template tetap jalan
         top_books = [(b, 0) for b in top_books_raw]
 
     return render_template("index.html", books=books, top_books=top_books)
+
+# --- API LIVE SEARCH (AUTOCOMPLETE) ---
+@main.route("/api/search")
+def api_search():
+    keyword = request.args.get("q", "").strip()
+    if not keyword or len(keyword) < 2:
+        return jsonify([])
+
+    # Mencari di Judul, Penulis, atau Kategori
+    books = Book.query.filter(
+        or_(
+            Book.title.ilike(f"%{keyword}%"),
+            Book.author.ilike(f"%{keyword}%"),
+            Book.category.ilike(f"%{keyword}%")
+        )
+    ).limit(5).all()
+
+    results = [{
+        "id": book.id,
+        "title": book.title,
+        "author": book.author,
+        "cover": book.cover_image
+    } for book in books]
+
+    return jsonify(results)
 
 # --- HALAMAN DETAIL BUKU ---
 @main.route("/book/<int:book_id>")
@@ -47,7 +70,7 @@ def book_detail(book_id):
         is_bookmarked = Bookmark.query.filter_by(user_id=current_user.id, book_id=book.id).first() is not None
     return render_template("book_detail.html", book=book, is_bookmarked=is_bookmarked)
 
-# --- KATALOG & PENCARIAN ---
+# --- KATALOG & PENCARIAN GLOBAL ---
 @main.route("/catalog")
 def catalog():
     q = request.args.get("q", "").strip()
